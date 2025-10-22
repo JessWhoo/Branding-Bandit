@@ -8,18 +8,31 @@ interface BrandVoiceProps {
 
 // Simple markdown to HTML converter
 const formatContent = (text: string) => {
-    // Process lists first to wrap them in <ul>
-    let listFormattedText = text.replace(/(- .+(\n- .+)*)/g, '<ul>$1</ul>');
+    // Process lists first to correctly handle multiline blocks.
+    let processedText = text.replace(/(- .+(?:\n- .+)*)/g, (match) => {
+        const listItems = match.split('\n').map(item => 
+            // remove '- ' and wrap
+            `<li class="ml-4 list-disc">${item.substring(2)}</li>` 
+        ).join('');
+        return `<ul>${listItems}</ul>`;
+    });
+
+    // Now process headings on the modified text.
+    processedText = processedText.replace(/^## (.*$)/gim, '<h4 class="text-xl font-bold mt-4 mb-2 text-gray-100">$1</h4>');
+
+    // Now process bold, which can be anywhere.
+    processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Finally, handle newlines for paragraph breaks.
+    processedText = processedText.replace(/\n/g, '<br />');
     
-    return listFormattedText
-        .replace(/^## (.*$)/gim, '<h4 class="text-xl font-bold mt-4 mb-2 text-gray-100">$1</h4>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/^- (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
-        .replace(/\n/g, '<br />')
-        .replace(/<br \/>(<h4|<ul)/g, '$1') // remove extra breaks before headings/lists
-        .replace(/(<\/li>|<h4.*>)<br \/>/g, '$1') // remove extra breaks after list items and headings
-        .replace(/<\/ul><br \/>/g, '</ul>'); // remove extra breaks after lists
+    // And cleanup extraneous breaks.
+    processedText = processedText.replace(/<br \s*\/?>\s*(<(ul|h4))/gi, '<$1'); // Before block
+    processedText = processedText.replace(/(<\/(ul|h4|li)>)\s*<br \s*\/?>/gi, '$1'); // After block or list item
+    
+    return processedText;
 };
+
 
 export const BrandVoice: React.FC<BrandVoiceProps> = ({ content }) => {
   const handleDownload = () => {

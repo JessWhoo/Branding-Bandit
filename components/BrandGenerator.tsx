@@ -8,7 +8,7 @@ import { LogoDisplay } from './LogoDisplay';
 import { BrandVoice } from './BrandVoice';
 import { MoodBoard } from './MoodBoard';
 import { SocialMediaKit } from './SocialMediaKit';
-import { ShareIcon } from './Icons';
+import { ShareIcon, ResetIcon } from './Icons';
 
 export const BrandGenerator: React.FC = () => {
     const [mission, setMission] = useState('');
@@ -123,6 +123,18 @@ export const BrandGenerator: React.FC = () => {
         });
     };
 
+    const handleReset = () => {
+        setMission('');
+        setBrandBible(null);
+        setLogos(null);
+        setBrandVoice(null);
+        setMoodBoard(null);
+        setSocialKit(null);
+        setError(null);
+        // Clean up the URL
+        window.history.pushState({}, document.title, window.location.pathname);
+    };
+
     const loadingMessage = (
         <div className="text-center p-6 bg-gray-800 rounded-lg">
             <div className="flex justify-center items-center">
@@ -165,13 +177,23 @@ export const BrandGenerator: React.FC = () => {
                 <div className="bg-gray-800 rounded-lg shadow-xl p-6 sm:p-8 animate-fade-in">
                     <div className="flex flex-col sm:flex-row justify-center items-center text-center sm:justify-between mb-8">
                         <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500 order-2 sm:order-1 mt-2 sm:mt-0">{brandBible.brandName} - Brand Bible</h2>
-                        <button
-                            onClick={handleShare}
-                            className="flex items-center gap-2 text-sm bg-gray-700 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 order-1 sm:order-2"
-                        >
-                            <ShareIcon />
-                            {isLinkCopied ? 'Link Copied!' : 'Share'}
-                        </button>
+                        <div className="flex items-center gap-2 order-1 sm:order-2">
+                            <button
+                                onClick={handleShare}
+                                className="flex items-center gap-2 text-sm bg-gray-700 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+                            >
+                                <ShareIcon />
+                                {isLinkCopied ? 'Link Copied!' : 'Share'}
+                            </button>
+                            <button
+                                onClick={handleReset}
+                                className="flex items-center gap-2 text-sm bg-gray-700 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+                                title="Start a new brand generation"
+                            >
+                                <ResetIcon />
+                                Reset
+                            </button>
+                        </div>
                     </div>
                     <div className="space-y-12">
                        <LogoDisplay logos={logos} descriptions={brandBible.logoDescriptions} isLoading={isLoading && !logos}/>
