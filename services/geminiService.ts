@@ -1,208 +1,314 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { BrandBible, SocialMediaKitAssets } from '../types';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
+// Per guidelines, initialize GoogleGenAI with an object containing the apiKey.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const brandBibleSchema = {
-  type: Type.OBJECT,
-  properties: {
-    brandName: { type: Type.STRING, description: "A creative and fitting name for the brand." },
-    palette: {
-      type: Type.ARRAY,
-      description: "A 5-color palette. The first should be primary, second accent, and the rest supporting.",
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING, description: "e.g., 'Midnight Blue', 'Sunset Orange'" },
-          hex: { type: Type.STRING, description: "The hex code, e.g., '#FFFFFF'" },
-          usage: { type: Type.STRING, description: "How to use this color (e.g., 'Primary buttons and CTAs', 'Backgrounds', 'Text')" },
-        },
-        required: ["name", "hex", "usage"],
-      },
-    },
-    fonts: {
-      type: Type.OBJECT,
-      description: "A pair of Google Fonts that work well together.",
-      properties: {
-        header: { type: Type.STRING, description: "Name of the Google Font for headers (e.g., 'Montserrat')" },
-        body: { type: Type.STRING, description: "Name of the Google Font for body text (e.g., 'Lato')" },
-        notes: { type: Type.STRING, description: "A brief note on why this pairing works." },
-      },
-      required: ["header", "body", "notes"],
-    },
-    logoDescriptions: {
-      type: Type.OBJECT,
-      description: "Detailed, visually rich descriptions for generating logos.",
-      properties: {
-        primary: { type: Type.STRING, description: "A detailed prompt for the main logo. Describe style (e.g., minimalist, geometric, illustrative), subject, and mood. For example: 'A minimalist, geometric logo of a soaring eagle, representing freedom and vision. Use clean lines and a modern aesthetic.'" },
-        secondary: {
-          type: Type.ARRAY,
-          description: "Two detailed prompts for secondary brand marks or icons, variations of the primary logo.",
-          items: { type: Type.STRING },
-        },
-      },
-      required: ["primary", "secondary"],
-    },
-  },
-  required: ["brandName", "palette", "fonts", "logoDescriptions"],
-};
+/**
+ * Generates a comprehensive brand bible based on a company mission.
+ */
+export async function generateBrandBible(mission: string): Promise<BrandBible> {
+    // FIX: Using gemini-2.5-pro for complex JSON generation as it is a complex text task.
+    const model = 'gemini-2.5-pro';
+    const prompt = `
+        Based on the following company mission, generate a comprehensive brand bible. The output must be a valid JSON object that strictly follows the provided schema.
 
-export const generateBrandBible = async (mission: string): Promise<BrandBible> => {
-  try {
+        **Mission:** "${mission}"
+
+        The brand bible should include:
+        1.  **brandName**: A catchy and relevant brand name.
+        2.  **palette**: An array of 5 color objects, each with 'hex' (e.g., "#FFFFFF"), 'name' (e.g., "Snow White"), and 'usage' (e.g., "Primary Background").
+        3.  **fonts**: An object with 'header' and 'body' font pairings from Google Fonts, and 'notes' explaining the choice.
+        4.  **logoDescriptions**: An object with 'primary' (a detailed description for the main logo), 'secondary' (an array of exactly two descriptions for secondary marks/icons), and 'favicon' (a description for a simplified, iconic version of the primary logo, suitable for small sizes like 16x16. It must avoid text and fine details). The descriptions should be detailed enough for an image generation model to create a visual from it. For example, "A minimalist line art logo of a phoenix rising, geometric style, using the primary brand color". The descriptions MUST NOT contain any text.
+        5.  **harmonies**: An array of 2 suggested color harmony objects (e.g., Analogous, Complementary). Each object must include: 'name' (the harmony type), 'palette' (an array of 3-4 new color objects with 'hex' and 'name'), and 'explanation' (a brief sentence on why this harmony works for the brand).
+    `;
+
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Generate a complete brand identity bible based on this company mission: "${mission}"`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: brandBibleSchema,
-        systemInstruction: "You are an expert brand identity designer. Your task is to generate a complete brand identity based on a user's company mission. The output must be a valid JSON object adhering to the provided schema. Be creative and professional. Ensure you provide exactly 5 colors and 2 secondary logo descriptions."
-      },
+        model,
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    brandName: { type: Type.STRING, description: "A catchy and relevant brand name for the company." },
+                    palette: {
+                        type: Type.ARRAY,
+                        description: "An array of 5 color objects that form the brand's color palette.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                hex: { type: Type.STRING, description: "The hexadecimal code for the color." },
+                                name: { type: Type.STRING, description: "A descriptive name for the color." },
+                                usage: { type: Type.STRING, description: "The intended use for the color (e.g., Primary, Accent)." },
+                            },
+                            required: ['hex', 'name', 'usage'],
+                        },
+                    },
+                    fonts: {
+                        type: Type.OBJECT,
+                        description: "An object describing the font pairing for the brand.",
+                        properties: {
+                            header: { type: Type.STRING, description: "The name of the Google Font for headers." },
+                            body: { type: Type.STRING, description: "The name of the Google Font for body text." },
+                            notes: { type: Type.STRING, description: "A brief note on why this font pairing works for the brand." },
+                        },
+                        required: ['header', 'body', 'notes'],
+                    },
+                    logoDescriptions: {
+                        type: Type.OBJECT,
+                        description: "Detailed descriptions for generating the brand's logos.",
+                        properties: {
+                            primary: { type: Type.STRING, description: "A detailed visual description for the primary logo. No text." },
+                            secondary: {
+                                type: Type.ARRAY,
+                                description: "An array of exactly two detailed visual descriptions for secondary logos or marks. No text.",
+                                items: { type: Type.STRING },
+                            },
+                            favicon: {
+                                type: Type.STRING,
+                                description: "A simplified, iconic version of the primary logo description for use as a favicon. No text, no fine details."
+                            },
+                        },
+                        required: ['primary', 'secondary', 'favicon'],
+                    },
+                    harmonies: {
+                        type: Type.ARRAY,
+                        description: "An array of 2 suggested color harmonies based on the primary palette.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING, description: "The name of the color harmony (e.g., 'Analogous Harmony')." },
+                                palette: {
+                                    type: Type.ARRAY,
+                                    description: "An array of 3-4 color objects for this harmony.",
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            hex: { type: Type.STRING, description: "The hexadecimal code for the color." },
+                                            name: { type: Type.STRING, description: "A descriptive name for the color." },
+                                        },
+                                        required: ['hex', 'name']
+                                    }
+                                },
+                                explanation: { type: Type.STRING, description: "A brief explanation of why this harmony works for the brand." }
+                            },
+                            required: ['name', 'palette', 'explanation']
+                        }
+                    }
+                },
+                required: ['brandName', 'palette', 'fonts', 'logoDescriptions', 'harmonies'],
+            },
+        },
     });
 
     const jsonText = response.text.trim();
-    const data = JSON.parse(jsonText);
-    
-    // Basic validation
-    if (!data.palette || data.palette.length !== 5) throw new Error("API returned incorrect number of colors.");
-    if (!data.logoDescriptions.secondary || data.logoDescriptions.secondary.length !== 2) throw new Error("API returned incorrect number of secondary logos.");
-
-    return data as BrandBible;
-  } catch (error) {
-    console.error("Error generating brand bible:", error);
-    throw new Error("Failed to generate brand identity. The model may have returned an unexpected format.");
-  }
-};
-
-type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
-
-export const generateImage = async (prompt: string, aspectRatio: AspectRatio = '1:1', isLogo: boolean = false): Promise<string> => {
-  try {
-    const finalPrompt = isLogo ? `${prompt}, simple, vector logo, on a plain white background` : prompt;
-    const response = await ai.models.generateImages({
-      model: 'imagen-4.0-generate-001',
-      prompt: finalPrompt,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/png',
-        aspectRatio: aspectRatio,
-      },
-    });
-
-    if (response.generatedImages && response.generatedImages.length > 0) {
-      const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-      return `data:image/png;base64,${base64ImageBytes}`;
-    }
-    throw new Error("No image was generated.");
-  } catch (error) {
-    console.error("Error generating image:", error);
-    throw new Error(`Failed to generate image.`);
-  }
-};
-
-
-export const generateBrandVoice = async (mission: string, bible: BrandBible): Promise<string> => {
+    // A simple validation to ensure we have a parseable object.
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Based on the following company mission and visual identity, create a set of brand voice guidelines.
-            
-            Mission: "${mission}"
-            
-            Visual Identity: ${JSON.stringify({ brandName: bible.brandName, palette: bible.palette, fonts: bible.fonts, logoStyle: bible.logoDescriptions.primary })}
-            
-            The guidelines should include:
-            - Tone of Voice: 3-5 descriptive keywords.
-            - Communication Style: e.g., professional, witty, empathetic.
-            - Examples: 2-3 examples of the voice in action (e.g., a website headline, a social media post).
-            
-            Format the output using simple markdown: use '##' for headings, '**' for bold text, and '-' for bullet points.`,
-            config: {
-                 systemInstruction: "You are an expert brand strategist. Your task is to create clear and concise brand voice guidelines based on the provided information. Follow the requested markdown format precisely."
-            }
-        });
-        return response.text;
-    } catch (error) {
-        console.error("Error generating brand voice:", error);
-        throw new Error("Failed to generate brand voice guidelines.");
-    }
-};
-
-const generatePromptsForVisuals = async (bible: BrandBible): Promise<{ moodBoardPrompts: string[], bannerPrompt: string, postPrompts: string[] }> => {
-    const promptSchema = {
-        type: Type.OBJECT,
-        properties: {
-            moodBoardPrompts: {
-                type: Type.ARRAY,
-                description: "4 distinct, detailed, visually rich prompts for an image generation AI to create a mood board. Describe abstract textures, lifestyle imagery, and concepts that evoke the brand's feel. Do not describe logos.",
-                items: { type: Type.STRING }
-            },
-            bannerPrompt: {
-                type: Type.STRING,
-                description: "1 detailed prompt for an abstract social media banner. It should incorporate the brand colors and feel, but not contain any text or logos."
-            },
-            postPrompts: {
-                type: Type.ARRAY,
-                description: "3 detailed prompts for square social media post templates (e.g., an announcement, a quote, a product feature). They should be visually representative of the brand, abstract, and good as backgrounds.",
-                items: { type: Type.STRING }
-            }
-        },
-        required: ["moodBoardPrompts", "bannerPrompt", "postPrompts"]
-    };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `You are a creative director. Based on this brand identity: ${JSON.stringify(bible)}, generate a set of prompts for an image generation AI. Ensure you provide exactly 4 mood board prompts, 1 banner prompt, and 3 post prompts.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: promptSchema
-            }
-        });
-        const jsonText = response.text.trim();
-        const data = JSON.parse(jsonText);
-        
-        if (!data.moodBoardPrompts || data.moodBoardPrompts.length !== 4) throw new Error("Incorrect number of mood board prompts");
-        if (!data.bannerPrompt) throw new Error("Missing banner prompt");
-        if (!data.postPrompts || data.postPrompts.length !== 3) throw new Error("Incorrect number of post prompts");
-
-        return data;
-    } catch (error) {
-        console.error("Error generating visual prompts:", error);
-        throw new Error("Failed to generate prompts for visual assets.");
+        const parsed = JSON.parse(jsonText);
+        if (typeof parsed !== 'object' || parsed === null) {
+            throw new Error("Generated response is not a valid JSON object.");
+        }
+        return parsed as BrandBible;
+    } catch (e) {
+        console.error("Failed to parse Brand Bible JSON:", e);
+        console.error("Received text:", jsonText);
+        throw new Error("The AI returned an invalid data structure for the Brand Bible. Please try again.");
     }
 }
 
-export const generateVisualAssets = async (bible: BrandBible): Promise<{ moodBoard: string[], socialKit: SocialMediaKitAssets }> => {
-    const { moodBoardPrompts, bannerPrompt, postPrompts } = await generatePromptsForVisuals(bible);
-    
-    const moodBoardImagePromises = moodBoardPrompts.map(prompt => generateImage(prompt, '1:1', false));
-    const bannerImagePromise = generateImage(bannerPrompt, '16:9', false);
-    const postImagePromises = postPrompts.map(prompt => generateImage(prompt, '1:1', false));
+/**
+ * Generates a single image using Imagen.
+ */
+export async function generateImage(prompt: string, aspectRatio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9", isLogo: boolean = false): Promise<string> {
+    // FIX: Using imagen-4.0-generate-001 for high-quality image generation.
+    const model = 'imagen-4.0-generate-001';
+    const fullPrompt = isLogo 
+        ? `A modern, minimalist vector logo. Description: ${prompt}. The logo should be on a solid white background, simple, iconic, and easily recognizable. No text.`
+        : prompt;
 
-    const [moodBoard, banner, postTemplates] = await Promise.all([
-        Promise.all(moodBoardImagePromises),
-        bannerImagePromise,
-        Promise.all(postImagePromises),
+    const response = await ai.models.generateImages({
+        model,
+        prompt: fullPrompt,
+        config: {
+            numberOfImages: 1,
+            outputMimeType: 'image/jpeg',
+            aspectRatio: aspectRatio,
+        },
+    });
+
+    const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
+    return `data:image/jpeg;base64,${base64ImageBytes}`;
+}
+
+/**
+ * Generates the brand voice and tone guidelines.
+ */
+export async function generateBrandVoice(mission: string, bible: BrandBible): Promise<string> {
+    // FIX: Using gemini-2.5-flash for a basic text generation task.
+    const model = 'gemini-2.5-flash';
+    const prompt = `
+        Based on the company mission and brand bible, define the brand's voice and tone.
+        The output must be in Markdown format.
+
+        **Company Mission:** "${mission}"
+        
+        **Brand Name:** ${bible.brandName}
+        **Color Palette:** ${bible.palette.map(c => `${c.name} (${c.hex})`).join(', ')}
+        **Typography:** Header: ${bible.fonts.header}, Body: ${bible.fonts.body}
+
+        Please provide:
+        ## Brand Voice Summary
+        A short paragraph summarizing the core voice.
+
+        ## Voice Characteristics
+        - **We are:** (list 3-4 positive adjectives)
+        - **We are not:** (list 3-4 contrasting adjectives)
+
+        ## Example Applications
+        Provide a few short examples of this voice in action (e.g., a social media post, an email subject line).
+    `;
+
+    const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+    });
+
+    return response.text;
+}
+
+/**
+ * Generates social media post ideas.
+ */
+export async function generateSocialMediaPosts(mission: string, bible: BrandBible): Promise<string[]> {
+    const model = 'gemini-2.5-pro';
+    const prompt = `
+        Based on the company mission and brand bible, generate 5 creative and engaging social media post ideas. The output must be a valid JSON object that strictly follows the provided schema.
+
+        **Company Mission:** "${mission}"
+        
+        **Brand Name:** ${bible.brandName}
+        **Color Palette:** ${bible.palette.map(c => c.name).join(', ')}
+        **Typography:** Header: ${bible.fonts.header}, Body: ${bible.fonts.body}
+        **Voice Notes:** The voice should align with these font choices: ${bible.fonts.notes}
+
+        Please provide 5 distinct post ideas. Aim for a mix of types:
+        - An engaging question for the audience.
+        - A behind-the-scenes look at the company/product.
+        - A post celebrating a customer story or user-generated content.
+        - An educational tip or piece of advice related to the brand's industry.
+        - A creative promotional post for a product or service.
+    `;
+
+    const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    posts: {
+                        type: Type.ARRAY,
+                        description: "An array of 5 social media post ideas, each as a string.",
+                        items: { type: Type.STRING },
+                    },
+                },
+                required: ['posts'],
+            },
+        },
+    });
+
+    const jsonText = response.text.trim();
+    try {
+        const parsed = JSON.parse(jsonText);
+        if (Array.isArray(parsed.posts)) {
+            return parsed.posts as string[];
+        }
+        throw new Error("Generated response 'posts' is not a valid array.");
+    } catch (e) {
+        console.error("Failed to parse Social Media Posts JSON:", e);
+        console.error("Received text:", jsonText);
+        throw new Error("The AI returned an invalid data structure for Social Media Posts. Please try again.");
+    }
+}
+
+
+/**
+ * Generates visual assets like mood boards and social media kits.
+ */
+export async function generateVisualAssets(bible: BrandBible): Promise<{ moodBoard: string[], socialKit: SocialMediaKitAssets }> {
+    const colorTheme = bible.palette.map(c => c.name).join(', ');
+
+    // Prompts for mood board (abstract, thematic images)
+    const moodBoardPrompts = [
+        `An abstract, visually striking image representing the core concept of '${bible.brandName}'. The image should evoke a sense of innovation and empowerment, using a color palette inspired by ${colorTheme}. High-resolution, cinematic lighting.`,
+        `A high-quality photograph that captures the mood and essence of the brand. Clean, modern, and professional. It should feel aspirational and align with the brand's mission.`,
+        `A textured background that incorporates the brand's primary colors (${colorTheme}) in a subtle, elegant way. Could be a digital graphic or a photograph of a real-world texture.`,
+        `A lifestyle image that represents the target audience of '${bible.brandName}'. The scene should be positive and engaging, reflecting the brand's values. Natural lighting.`
+    ];
+
+    // Prompts for social media & website kit
+    const websiteBannerPrompt = `A high-resolution website hero banner for '${bible.brandName}'. It should be visually captivating and incorporate the brand's color palette (${colorTheme}). Design should be professional and modern, with plenty of negative space on one side for headlines and call-to-action buttons. It must not contain any text. Abstract and sophisticated.`;
+    const socialBannerPrompt = `A professional social media banner for '${bible.brandName}'. It should be visually appealing and incorporate the brand's color palette (${colorTheme}). Leave ample empty space for text overlays. The style should be modern and clean. It must not contain any text.`;
+    const postTemplatePrompts = [
+        `A square social media post template for '${bible.brandName}'. It should use the brand colors (${colorTheme}) and have a clean, modern design with a designated area for a photo and text. It must not contain any text.`,
+        `A square social media template for a quote or a customer testimonial. It should have a visually interesting background using the brand's colors and style. It must not contain any text.`,
+        `A square social media template for a product announcement or feature highlight. It should be bold and eye-catching, using the brand's visual identity. It must not contain any text.`
+    ];
+
+    // Generate all images in parallel for efficiency
+    const moodBoardPromises = moodBoardPrompts.map(p => generateImage(p, '1:1'));
+    const socialKitPromises = [
+        generateImage(websiteBannerPrompt, '16:9'),
+        generateImage(socialBannerPrompt, '16:9'),
+        ...postTemplatePrompts.map(p => generateImage(p, '1:1'))
+    ];
+    
+    // Using Promise.allSettled to handle potential individual failures
+    const [moodBoardResults, socialKitImageResults] = await Promise.all([
+        Promise.allSettled(moodBoardPromises),
+        Promise.allSettled(socialKitPromises)
     ]);
+
+    const moodBoard = moodBoardResults
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+        .map(r => r.value);
+    
+    const successfulSocialImages = socialKitImageResults
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+        .map(r => r.value);
+
+    const websiteBanner = successfulSocialImages.length > 0 ? successfulSocialImages[0] : '';
+    const banner = successfulSocialImages.length > 1 ? successfulSocialImages[1] : '';
+    const postTemplates = successfulSocialImages.length > 2 ? successfulSocialImages.slice(2) : [];
     
     return {
         moodBoard,
         socialKit: {
+            websiteBanner,
             banner,
-            postTemplates
+            postTemplates,
         }
     };
-};
+}
 
-export const createChatSession = (): Chat => {
-  return ai.chats.create({
-    model: 'gemini-2.5-flash',
-    config: {
-        systemInstruction: 'You are a friendly and knowledgeable branding expert. Answer questions about branding, marketing, and design concisely.'
-    }
-  });
+/**
+ * Engages in a chat conversation about branding.
+ */
+export const startBrandingChat = (): Chat => {
+    // FIX: Using ai.chats.create to start a chat session, with gemini-2.5-pro for better conversational abilities.
+    const chat = ai.chats.create({
+        model: 'gemini-2.5-pro',
+        config: {
+            systemInstruction: `
+                You are "Branding Bot", an expert AI assistant specializing in branding, marketing, and design. 
+                Your goal is to help users refine their brand identity based on the brand bible they've generated.
+                You are friendly, insightful, and provide actionable advice.
+                When asked for visual ideas, describe them vividly but do not generate images.
+                Keep your responses concise and focused on the user's questions.
+            `
+        },
+    });
+    return chat;
 };

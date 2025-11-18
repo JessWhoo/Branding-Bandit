@@ -47,6 +47,7 @@ export const BrandVoice: React.FC<BrandVoiceProps> = ({ content }) => {
         <button
             onClick={handleDownload}
             title="Download Brand Voice as Markdown"
+            aria-label="Download brand voice as a Markdown file"
             className="p-2 rounded-full bg-gray-600 hover:bg-indigo-500 transition-colors"
         >
             <DownloadIcon />

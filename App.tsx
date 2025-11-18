@@ -27,7 +27,7 @@ const App: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500">
-            Branding Bandit
+            Branding Bible
           </h1>
           <p className="mt-2 text-lg text-gray-400">
             AI-powered branding at your fingertips.

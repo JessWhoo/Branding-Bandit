@@ -4,6 +4,17 @@ export interface ColorInfo {
   usage: string;
 }
 
+export interface HarmonyColor {
+    hex: string;
+    name: string;
+}
+
+export interface ColorHarmony {
+    name: string;
+    palette: HarmonyColor[];
+    explanation: string;
+}
+
 export interface FontPair {
   header: string;
   body: string;
@@ -13,6 +24,7 @@ export interface FontPair {
 export interface LogoDescriptions {
   primary: string;
   secondary: string[];
+  favicon: string;
 }
 
 export interface BrandBible {
@@ -20,15 +32,18 @@ export interface BrandBible {
   palette: ColorInfo[];
   fonts: FontPair;
   logoDescriptions: LogoDescriptions;
+  harmonies?: ColorHarmony[];
 }
 
 export interface GeneratedLogos {
     primary: string;
     secondary: string[];
+    favicon: string;
 }
 
 export interface SocialMediaKitAssets {
     banner: string;
+    websiteBanner: string;
     postTemplates: string[];
 }
 

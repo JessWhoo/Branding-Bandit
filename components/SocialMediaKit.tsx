@@ -18,7 +18,8 @@ const ImageDownloader: React.FC<{ src: string | null; alt: string; filename: str
                 <img src={src} alt={alt} className="w-full h-full object-cover" />
                 <button
                     onClick={() => downloadFile(src, filename)}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                    aria-label={`Download ${alt}`}
                     title={`Download ${alt}`}
                 >
                     <DownloadIcon />
@@ -32,10 +33,10 @@ const ImageDownloader: React.FC<{ src: string | null; alt: string; filename: str
 export const SocialMediaKit: React.FC<SocialMediaKitProps> = ({ assets, profilePicture, isLoading }) => {
   return (
     <div>
-      <h3 className="text-2xl font-bold mb-4 text-gray-100">Social Media Kit</h3>
+      <h3 className="text-2xl font-bold mb-4 text-gray-100">Social Media & Website Kit</h3>
       <div className="space-y-6">
         <div>
-          <h4 className="text-lg font-semibold mb-2 text-gray-200">Profile Picture & Banner</h4>
+          <h4 className="text-lg font-semibold mb-2 text-gray-200">Profile Assets</h4>
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             <div className="flex-shrink-0">
                 <p className="text-sm text-center mb-1 text-gray-400">Profile Picture</p>
@@ -48,7 +49,7 @@ export const SocialMediaKit: React.FC<SocialMediaKitProps> = ({ assets, profileP
                 />
             </div>
             <div className="flex-grow">
-                 <p className="text-sm mb-1 text-gray-400">Banner</p>
+                 <p className="text-sm mb-1 text-gray-400">Social Media Banner</p>
                 <ImageDownloader 
                     src={assets?.banner ?? null}
                     alt="Social Media Banner"
@@ -58,6 +59,16 @@ export const SocialMediaKit: React.FC<SocialMediaKitProps> = ({ assets, profileP
                 />
             </div>
           </div>
+        </div>
+        <div>
+            <h4 className="text-lg font-semibold mb-2 text-gray-200">Website Hero Banner</h4>
+            <ImageDownloader
+                src={assets?.websiteBanner ?? null}
+                alt="Website Hero Banner"
+                filename="website-hero-banner.png"
+                isLoading={isLoading && !assets?.websiteBanner}
+                className="w-full aspect-[16/9] bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden shadow-lg"
+            />
         </div>
         <div>
             <h4 className="text-lg font-semibold mb-2 text-gray-200">Post Templates</h4>

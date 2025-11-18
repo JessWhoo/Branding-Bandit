@@ -20,7 +20,8 @@ export const MoodBoard: React.FC<MoodBoardProps> = ({ images, isLoading }) => {
                 <img src={src} alt={`Mood board image ${index + 1}`} className="w-full h-full object-cover transition-transform hover:scale-105" />
                 <button
                     onClick={() => downloadFile(src, `moodboard-image-${index + 1}.png`)}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                    aria-label={`Download mood board image ${index + 1}`}
                     title={`Download Image ${index + 1}`}
                 >
                     <DownloadIcon />

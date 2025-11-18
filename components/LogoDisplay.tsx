@@ -11,7 +11,7 @@ interface LogoDisplayProps {
 }
 
 const LogoCard: React.FC<{ title: string; imageSrc: string | null; description: string; isLoading: boolean; filename: string }> = ({ title, imageSrc, description, isLoading, filename }) => (
-    <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center text-center">
+    <div className="bg-gray-700 p-4 rounded-lg flex flex-col items-center text-center h-full">
         <h4 className="font-bold text-lg mb-2 text-white">{title}</h4>
         <div className="w-full h-40 sm:h-56 bg-gray-600 rounded-md flex items-center justify-center mb-3 relative group">
             {isLoading && !imageSrc ? (
@@ -21,7 +21,8 @@ const LogoCard: React.FC<{ title: string; imageSrc: string | null; description: 
                     <img src={imageSrc} alt={title} className="max-w-full max-h-full object-contain" />
                     <button
                         onClick={() => downloadFile(imageSrc, filename)}
-                        className="absolute top-2 right-2 p-2 rounded-full bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 p-2 rounded-full bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                        aria-label={`Download ${title}`}
                         title={`Download ${title}`}
                     >
                         <DownloadIcon />
@@ -31,7 +32,7 @@ const LogoCard: React.FC<{ title: string; imageSrc: string | null; description: 
                 <div className="text-gray-400">Generating...</div>
             )}
         </div>
-        <p className="text-xs text-gray-400">{description}</p>
+        <p className="text-xs text-gray-400 mt-auto">{description}</p>
     </div>
 );
 
@@ -41,7 +42,7 @@ export const LogoDisplay: React.FC<LogoDisplayProps> = ({ logos, descriptions, i
     <div>
         <h3 className="text-2xl font-bold mb-4 text-gray-100">Logos & Marks</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
+            <div className="md:col-span-1 animate-fade-in-up" style={{ animationFillMode: 'backwards', animationDelay: '100ms' }}>
                 <LogoCard 
                     title="Primary Logo" 
                     imageSrc={logos?.primary ?? null}
@@ -50,21 +51,34 @@ export const LogoDisplay: React.FC<LogoDisplayProps> = ({ logos, descriptions, i
                     filename="primary-logo.png"
                 />
             </div>
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                 <LogoCard 
-                    title="Secondary Mark 1" 
-                    imageSrc={logos?.secondary[0] ?? null}
-                    description={descriptions.secondary[0]}
-                    isLoading={isLoading || !logos?.secondary[0]}
-                    filename="secondary-mark-1.png"
-                />
-                 <LogoCard 
-                    title="Secondary Mark 2" 
-                    imageSrc={logos?.secondary[1] ?? null}
-                    description={descriptions.secondary[1]}
-                    isLoading={isLoading || !logos?.secondary[1]}
-                    filename="secondary-mark-2.png"
-                />
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                 <div className="animate-fade-in-up" style={{ animationFillMode: 'backwards', animationDelay: '200ms' }}>
+                    <LogoCard 
+                        title="Secondary Mark 1" 
+                        imageSrc={logos?.secondary[0] ?? null}
+                        description={descriptions.secondary[0]}
+                        isLoading={isLoading || !logos?.secondary[0]}
+                        filename="secondary-mark-1.png"
+                    />
+                 </div>
+                 <div className="animate-fade-in-up" style={{ animationFillMode: 'backwards', animationDelay: '300ms' }}>
+                    <LogoCard 
+                        title="Secondary Mark 2" 
+                        imageSrc={logos?.secondary[1] ?? null}
+                        description={descriptions.secondary[1]}
+                        isLoading={isLoading || !logos?.secondary[1]}
+                        filename="secondary-mark-2.png"
+                    />
+                </div>
+                 <div className="animate-fade-in-up" style={{ animationFillMode: 'backwards', animationDelay: '400ms' }}>
+                    <LogoCard 
+                        title="Favicon" 
+                        imageSrc={logos?.favicon ?? null}
+                        description={descriptions.favicon}
+                        isLoading={isLoading || !logos?.favicon}
+                        filename="favicon.png"
+                    />
+                </div>
             </div>
         </div>
     </div>
