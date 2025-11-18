@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Chat } from "@google/genai";
-import { BrandBible, SocialMediaKitAssets } from '../types';
+import { BrandBible, SocialMediaKitAssets, SeoRecommendations } from '../types';
 
 // Per guidelines, initialize GoogleGenAI with an object containing the apiKey.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -20,7 +21,7 @@ export async function generateBrandBible(mission: string): Promise<BrandBible> {
         2.  **palette**: An array of 5 color objects, each with 'hex' (e.g., "#FFFFFF"), 'name' (e.g., "Snow White"), and 'usage' (e.g., "Primary Background").
         3.  **fonts**: An object with 'header' and 'body' font pairings from Google Fonts, and 'notes' explaining the choice.
         4.  **logoDescriptions**: An object with 'primary' (a detailed description for the main logo), 'secondary' (an array of exactly two descriptions for secondary marks/icons), and 'favicon' (a description for a simplified, iconic version of the primary logo, suitable for small sizes like 16x16. It must avoid text and fine details). The descriptions should be detailed enough for an image generation model to create a visual from it. For example, "A minimalist line art logo of a phoenix rising, geometric style, using the primary brand color". The descriptions MUST NOT contain any text.
-        5.  **harmonies**: An array of 2 suggested color harmony objects (e.g., Analogous, Complementary). Each object must include: 'name' (the harmony type), 'palette' (an array of 3-4 new color objects with 'hex' and 'name'), and 'explanation' (a brief sentence on why this harmony works for the brand).
+        5.  **harmonies**: An array of 2 suggested color harmony objects (e.g., Analogous, Complementary) that complement the primary palette. Each object must include: 'name' (the harmony type), 'palette' (an array of 3-4 new color objects with 'hex' and 'name'), and 'explanation' (a brief sentence on why this harmony works for the brand).
     `;
 
     const response = await ai.models.generateContent({
@@ -175,6 +176,62 @@ export async function generateBrandVoice(mission: string, bible: BrandBible): Pr
     });
 
     return response.text;
+}
+
+/**
+ * Generates SEO recommendations for the brand.
+ */
+export async function generateSeoRecommendations(mission: string, bible: BrandBible): Promise<SeoRecommendations> {
+    const model = 'gemini-2.5-flash';
+    const prompt = `
+        Based on the company mission and brand bible, generate SEO metadata recommendations.
+        The output must be a valid JSON object that strictly follows the provided schema.
+
+        **Company Mission:** "${mission}"
+        **Brand Name:** ${bible.brandName}
+        
+        Please provide:
+        1. **titleTags**: 3 distinct, compelling HTML title tags (approx 50-60 characters).
+        2. **metaDescription**: A concise, SEO-friendly meta description (150-160 characters) summarizing the brand.
+        3. **keywords**: A list of 10-15 relevant SEO keywords or keyphrases for the website.
+    `;
+
+    const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    titleTags: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING },
+                        description: "3 suggested title tags."
+                    },
+                    metaDescription: {
+                        type: Type.STRING,
+                        description: "Meta description for the homepage."
+                    },
+                    keywords: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING },
+                        description: "List of SEO keywords."
+                    }
+                },
+                required: ['titleTags', 'metaDescription', 'keywords']
+            }
+        }
+    });
+    
+    const jsonText = response.text.trim();
+     try {
+        const parsed = JSON.parse(jsonText);
+        return parsed as SeoRecommendations;
+    } catch (e) {
+        console.error("Failed to parse SEO JSON:", e);
+         throw new Error("The AI returned an invalid data structure for SEO. Please try again.");
+    }
 }
 
 /**

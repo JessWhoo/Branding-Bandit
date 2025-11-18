@@ -1,6 +1,7 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import { generateBrandBible, generateImage, generateBrandVoice, generateVisualAssets, generateSocialMediaPosts } from '../services/geminiService';
-import { BrandBible, GeneratedLogos, SocialMediaKitAssets } from '../types';
+import { generateBrandBible, generateImage, generateBrandVoice, generateVisualAssets, generateSocialMediaPosts, generateSeoRecommendations } from '../services/geminiService';
+import { BrandBible, GeneratedLogos, SocialMediaKitAssets, ColorInfo, FontPair, SeoRecommendations } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ColorPalette } from './ColorPalette';
 import { FontPairings } from './FontPairings';
@@ -9,6 +10,7 @@ import { BrandVoice } from './BrandVoice';
 import { MoodBoard } from './MoodBoard';
 import { SocialMediaKit } from './SocialMediaKit';
 import { SocialMediaPosts } from './SocialMediaPosts';
+import { SeoDisplay } from './SeoDisplay';
 import { ShareIcon, ResetIcon } from './Icons';
 
 export const BrandGenerator: React.FC = () => {
@@ -17,6 +19,7 @@ export const BrandGenerator: React.FC = () => {
     const [logos, setLogos] = useState<GeneratedLogos | null>(null);
     const [brandVoice, setBrandVoice] = useState<string | null>(null);
     const [socialMediaPosts, setSocialMediaPosts] = useState<string[] | null>(null);
+    const [seoRecommendations, setSeoRecommendations] = useState<SeoRecommendations | null>(null);
     const [moodBoard, setMoodBoard] = useState<string[] | null>(null);
     const [socialKit, setSocialKit] = useState<SocialMediaKitAssets | null>(null);
     
@@ -45,6 +48,7 @@ export const BrandGenerator: React.FC = () => {
         setLogos(null);
         setBrandVoice(null);
         setSocialMediaPosts(null);
+        setSeoRecommendations(null);
         setMoodBoard(null);
         setSocialKit(null);
         
@@ -59,8 +63,8 @@ export const BrandGenerator: React.FC = () => {
             // The following steps are non-critical. If they fail, we'll collect errors
             // but continue to display what was successfully generated.
 
-            // Step 2: Generate logos, brand voice, and social posts in parallel
-            setLoadingStep("Generating logos, voice, & post ideas...");
+            // Step 2: Generate logos, brand voice, social posts, and SEO in parallel
+            setLoadingStep("Generating logos, voice, SEO & post ideas...");
             try {
                 const logoPromises = [
                     generateImage(bible.logoDescriptions.primary, '1:1', true),
@@ -69,11 +73,13 @@ export const BrandGenerator: React.FC = () => {
                 ];
                 const brandVoicePromise = generateBrandVoice(missionToGenerate, bible);
                 const socialPostsPromise = generateSocialMediaPosts(missionToGenerate, bible);
+                const seoPromise = generateSeoRecommendations(missionToGenerate, bible);
                 
-                const [logoResults, voiceResult, socialPostsResult] = await Promise.all([
+                const [logoResults, voiceResult, socialPostsResult, seoResult] = await Promise.all([
                     Promise.all(logoPromises),
                     brandVoicePromise,
-                    socialPostsPromise
+                    socialPostsPromise,
+                    seoPromise
                 ]);
 
                 const primaryImage = logoResults[0];
@@ -87,9 +93,10 @@ export const BrandGenerator: React.FC = () => {
                 });
                 setBrandVoice(voiceResult);
                 setSocialMediaPosts(socialPostsResult);
+                setSeoRecommendations(seoResult);
             } catch (step2Error) {
-                console.error("Logo/Voice/Posts Generation Error:", step2Error);
-                errorMessages.push("Failed to generate logos, brand voice, or social media ideas. This can be a temporary issue with the AI services.");
+                console.error("Logo/Voice/Posts/SEO Generation Error:", step2Error);
+                errorMessages.push("Failed to generate logos, brand voice, SEO, or social media ideas. This can be a temporary issue with the AI services.");
             }
             
             // Step 3: Generate mood board and social media kit in parallel
@@ -150,11 +157,24 @@ export const BrandGenerator: React.FC = () => {
         setLogos(null);
         setBrandVoice(null);
         setSocialMediaPosts(null);
+        setSeoRecommendations(null);
         setMoodBoard(null);
         setSocialKit(null);
         setError(null);
         // Clean up the URL
         window.history.pushState({}, document.title, window.location.pathname);
+    };
+
+    const handlePaletteUpdate = (newPalette: ColorInfo[]) => {
+        if (brandBible) {
+            setBrandBible({ ...brandBible, palette: newPalette });
+        }
+    };
+
+    const handleFontsUpdate = (newFonts: FontPair) => {
+        if (brandBible) {
+            setBrandBible({ ...brandBible, fonts: newFonts });
+        }
     };
 
     const loadingMessage = (
@@ -238,9 +258,17 @@ export const BrandGenerator: React.FC = () => {
                     </div>
                     <div className="space-y-12">
                        <LogoDisplay logos={logos} descriptions={brandBible.logoDescriptions} isLoading={isLoading && !logos}/>
-                       <ColorPalette palette={brandBible.palette} harmonies={brandBible.harmonies} />
-                       <FontPairings fonts={brandBible.fonts} />
+                       <ColorPalette 
+                            palette={brandBible.palette} 
+                            harmonies={brandBible.harmonies} 
+                            onUpdate={handlePaletteUpdate}
+                       />
+                       <FontPairings 
+                            fonts={brandBible.fonts} 
+                            onUpdate={handleFontsUpdate}
+                       />
                        {brandVoice ? <BrandVoice content={brandVoice} /> : (isLoading && !error && <div className="animate-pulse bg-gray-700 h-24 rounded-lg"></div>)}
+                       <SeoDisplay seo={seoRecommendations} isLoading={isLoading && !seoRecommendations} />
                        <SocialMediaPosts ideas={socialMediaPosts} isLoading={isLoading && !socialMediaPosts} />
                        <MoodBoard images={moodBoard} isLoading={isLoading && !moodBoard} />
                        <SocialMediaKit assets={socialKit} profilePicture={logos?.primary ?? null} isLoading={isLoading && !socialKit} />

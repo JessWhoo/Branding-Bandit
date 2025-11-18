@@ -1,3 +1,4 @@
+
 export interface ColorInfo {
   hex: string;
   name: string;
@@ -50,4 +51,10 @@ export interface SocialMediaKitAssets {
 export interface ChatMessage {
     role: 'user' | 'model';
     content: string;
+}
+
+export interface SeoRecommendations {
+    titleTags: string[];
+    metaDescription: string;
+    keywords: string[];
 }
