@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { BrandGenerator } from './components/BrandGenerator';
 import { ChatBot } from './components/ChatBot';
-import { BrandIcon, ChatIcon } from './components/Icons';
+import { AdaComplianceDashboard } from './components/AdaComplianceDashboard';
+import { BrandIcon, ChatIcon, AccessibilityIcon } from './components/Icons';
+import { BrandBible } from './types';
 
-type Tab = 'generator' | 'chatbot';
+type Tab = 'generator' | 'chatbot' | 'ada';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('generator');
+  const [brandBible, setBrandBible] = useState<BrandBible | null>(null);
 
   const TabButton = ({ tab, label, icon }: { tab: Tab, label: string, icon: React.ReactNode }) => (
     <button
       onClick={() => setActiveTab(tab)}
       className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-        activeTab === tab 
-          ? 'bg-indigo-600 text-white shadow-lg' 
+        activeTab === tab
+          ? 'bg-indigo-600 text-white shadow-lg'
           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
       }`}
     >
@@ -35,15 +38,17 @@ const App: React.FC = () => {
         </header>
 
         <div className="flex justify-center mb-8">
-          <div className="flex space-x-4 p-2 bg-gray-800 rounded-lg shadow-md">
+          <div className="flex flex-wrap justify-center gap-2 p-2 bg-gray-800 rounded-lg shadow-md">
             <TabButton tab="generator" label="Brand Generator" icon={<BrandIcon />} />
             <TabButton tab="chatbot" label="Branding Chat" icon={<ChatIcon />} />
+            <TabButton tab="ada" label="ADA Compliance" icon={<AccessibilityIcon />} />
           </div>
         </div>
-        
+
         <main>
-          {activeTab === 'generator' && <BrandGenerator />}
+          {activeTab === 'generator' && <BrandGenerator onBibleChange={setBrandBible} />}
           {activeTab === 'chatbot' && <ChatBot />}
+          {activeTab === 'ada' && <AdaComplianceDashboard brandBible={brandBible} />}
         </main>
       </div>
     </div>

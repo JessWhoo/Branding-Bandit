@@ -13,7 +13,11 @@ import { SocialMediaPosts } from './SocialMediaPosts';
 import { SeoDisplay } from './SeoDisplay';
 import { ShareIcon, ResetIcon } from './Icons';
 
-export const BrandGenerator: React.FC = () => {
+interface BrandGeneratorProps {
+    onBibleChange?: (bible: BrandBible | null) => void;
+}
+
+export const BrandGenerator: React.FC<BrandGeneratorProps> = ({ onBibleChange }) => {
     const [mission, setMission] = useState('');
     const [brandBible, setBrandBible] = useState<BrandBible | null>(null);
     const [logos, setLogos] = useState<GeneratedLogos | null>(null);
@@ -27,6 +31,10 @@ export const BrandGenerator: React.FC = () => {
     const [loadingStep, setLoadingStep] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLinkCopied, setIsLinkCopied] = useState(false);
+
+    useEffect(() => {
+        onBibleChange?.(brandBible);
+    }, [brandBible]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const exampleMissions = [
         "To create sustainable and stylish everyday products that are kind to the planet.",
